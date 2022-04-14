@@ -34,23 +34,6 @@ class AbstractStudent(ks.models.Model):
         self.prediction_locked = None
         self.explanation_locked = None
 
-        self.is_original: bool = is_original
-        self.active_model_variant = tf.Variable(2, name='active_model_variant', trainable=False)
-        pprint(self.__dict__)
-        self._sub_models = {}
-
-    # TODO: Manage this with MetaClass
-    def setup_sub_models(self):
-        if self.is_original:
-
-            explanation_locked_model = self.duplicate()
-            explanation_locked_model.is_original = False
-            self._sub_models[1] = explanation_locked_model
-
-            prediction_locked_model = self.duplicate()
-            prediction_locked_model.is_original = False
-            self._sub_models[2] = prediction_locked_model
-
     def duplicate(self):
         c = self.__class__(name='', variant='', is_original=False)
         for key, value in self.__dict__.items():

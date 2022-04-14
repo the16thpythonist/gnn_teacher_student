@@ -1,5 +1,8 @@
-from typing import Callable
-from collections import OrderedDict
+from typing import Callable, List
+from collections import OrderedDict, defaultdict
+from pprint import pprint
+
+import tensorflow.keras as ks
 
 from gnn_teacher_student.students import AbstractStudent
 
@@ -25,14 +28,27 @@ class SegmentedFitProcess:
 
             fit_kwargs = self.fit_kwargs.copy()
             fit_kwargs['epochs'] = epoch_diff
-            
+
             hist = self.model.fit(**fit_kwargs)
+            hists.append(hist)
             cb(self.model, hist)
 
             self.current_epoch += epoch_diff
 
-        # TODO: Merge histories
-        return hists
+        merged_hist = self.merge_histories(hists)
+        return merged_hist
+
+    def merge_histories(self, hists: List[ks.callbacks.History]):
+        merged_hist = ks.callbacks.History()
+
+        merged_history = defaultdict(list)
+        for hist in hists:
+            for key, value in hist.history.items():
+                if isinstance(value, list):
+                    merged_history[key] += value
+
+        merged_hist.history = merged_history
+        return merged_hist
 
     def add_callback(self,
                      epochs: int,
