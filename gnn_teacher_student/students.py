@@ -1,5 +1,5 @@
 from copy import deepcopy, copy
-from typing import Tuple, Callable
+from typing import Tuple, Callable, Optional
 from pprint import pprint
 
 import tensorflow as tf
@@ -33,6 +33,17 @@ class AbstractStudent(ks.models.Model):
 
         self.prediction_locked = None
         self.explanation_locked = None
+
+        self.compile_args: Optional[list] = None
+        self.compile_kwargs: Optional[dict] = None
+
+    def compile(self, *args, **kwargs):
+        super(AbstractStudent, self).compile(*args, **kwargs)
+        self.compile_args = args
+        self.compile_kwargs = kwargs
+
+    def recompile(self):
+        self.compile(*self.compile_args, **self.compile_kwargs)
 
     def duplicate(self):
         c = self.__class__(name='', variant='', is_original=False)
@@ -125,8 +136,6 @@ class SimpleAttentionStudent(AbstractStudent):
 
         self.lay_pooling = lay_pooling_cb()
         self.lay_out = lay_out_cb()
-
-        self.setup_sub_models()
 
     def call(self, inputs):
         node_input, edge_input, edge_index_input = inputs

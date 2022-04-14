@@ -18,151 +18,7 @@ from kgcnn.data.moleculenet import MemoryGraphDataset
 from kgcnn.utils.data import ragged_tensor_from_nested_numpy
 
 from gnn_teacher_student.students import StudentTemplate, AbstractStudent
-
-
-class NoLoss(ks.losses.Loss):
-
-    def __init__(self):
-        ks.losses.Loss.__init__(self)
-        self.name = 'no_loss'
-
-    def call(self, y_true, y_pred):
-        return 0.0
-
-
-class ExplanationLoss(ks.losses.Loss):
-
-    def __init__(self,
-                 loss_function: ks.losses.Loss = ks.losses.binary_crossentropy,
-                 mask_empty_explanations: bool = True):
-        ks.losses.Loss.__init__(self)
-
-        self.loss_function = loss_function
-        self.mask_empty_explanations = mask_empty_explanations
-        self.name = 'explanation_loss'
-
-    def call(self, y_true, y_pred):
-        loss = self.loss_function(y_true, y_pred)
-        mask = tf.cast(tf.reduce_max(y_true, axis=-1) > 0, dtype=tf.float32)
-
-        if self.mask_empty_explanations:
-            loss *= mask
-
-        loss = tf.reduce_mean(loss, axis=-1)
-        return loss
-
-
-class LogProgressCallback(ks.callbacks.Callback):
-
-    def __init__(self,
-                 logger: logging.Logger,
-                 identifier: str,
-                 epoch_step: int):
-        ks.callbacks.Callback.__init__(self)
-
-        self.logger = logger
-        self.identifier = identifier
-        self.epoch_step = epoch_step
-
-        self.start_time = time.time()
-        self.elapsed_time = 0
-
-    def on_epoch_end(self, epoch, logs=None):
-        if epoch % self.epoch_step == 0:
-            self.elapsed_time = time.time() - self.start_time
-            value = logs[self.identifier]
-
-            self.logger.info(
-                f'   epoch {str(epoch):<5}: value={value:.1f} elapsed_time={self.elapsed_time:.1f}s'
-            )
-
-
-class StudentTrainingStrategy:
-
-    def __init__(self):
-        pass
-
-    def create_kwargs(self):
-        raise NotImplemented
-
-    def __call__(self):
-        return self.create_kwargs()
-
-
-class LossWeightSwitchCallback(ks.callbacks.Callback):
-
-    def __init__(self,
-                 loss_weights: List[tf.Variable],
-                 weights1: List[float],
-                 weights2: List[float],
-                 epoch_threshold: int):
-        ks.callbacks.Callback.__init__(self)
-
-        self.loss_weights = loss_weights
-        self.weights1 = weights1
-        self.weights2 = weights2
-        self.epoch_threshold = epoch_threshold
-
-    def on_epoch_begin(self, epoch, logs=None):
-        for var, w1, w2 in zip(self.loss_weights, self.weights1, self.weights2):
-            if epoch < self.epoch_threshold:
-                K.set_value(var, w1)
-            else:
-                K.set_value(var, w2)
-
-
-class LockExplanationCallback(ks.callbacks.Callback):
-
-    def __init__(self,
-                 epoch_threshold: int):
-        ks.callbacks.Callback.__init__(self)
-        self.epoch_threshold = epoch_threshold
-
-    def on_epoch_begin(self, epoch, logs=None):
-        if epoch == self.epoch_threshold:
-            while len(self.model._trainable_weights) != 0:
-                w = self.model._trainable_weights.pop()
-                self.model._non_trainable_weights.append(w)
-
-
-class ExplanationPreTraining(StudentTrainingStrategy):
-
-    def __init__(self,
-                 loss: List[ks.losses.Loss],
-                 epochs: int,
-                 lock_explanation: bool = False):
-        StudentTrainingStrategy.__init__(self)
-
-        self.loss = loss
-        self.epochs = epochs
-        self.lock_explanation = lock_explanation
-
-        self.loss_weights = [
-            tf.Variable(1.0),
-            tf.Variable(1.0),
-            tf.Variable(1.0)
-        ]
-
-        self.loss_weight_switch = LossWeightSwitchCallback(
-            loss_weights=self.loss_weights,
-            weights1=[0, 1, 1],
-            weights2=[1, 0, 0],
-            epoch_threshold=self.epochs
-        )
-        self.lock_explanation = LockExplanationCallback(
-            epoch_threshold=self.epochs
-        )
-
-    def create_kwargs(self):
-        kwargs = {
-            'loss': self.loss,
-            'loss_weights': self.loss_weights,
-            'callbacks': [
-                self.loss_weight_switch,
-                self.lock_explanation
-            ]
-        }
-        return kwargs
+from gnn_teacher_student.training import FitManager, LogProgressCallback
 
 
 # == STUDENT TEACHER ANALYSIS ===============================================================================
@@ -235,7 +91,6 @@ class StudentTeacherExplanationAnalysis:
         dataset = self._process_dataset(dataset)
 
         xtrain, ytrain, xtest, ytest = self._split_dataset(dataset, train_split, random_state)
-        print(xtrain[2].dtype)
         node_attribute_count = dataset['node_attributes'][0].shape[1]
         edge_attribute_count = dataset['edge_attributes'][0].shape[1]
 
@@ -260,6 +115,19 @@ class StudentTeacherExplanationAnalysis:
             loss = variant_kwargs[student_variant]['loss']
             loss_weights = variant_kwargs[student_variant]['loss_weights']
 
+            # ~ Assembling the callbacks
+            callbacks = []
+
+            if log_progress is not None:
+                callbacks.append(LogProgressCallback(
+                    logger=self.logger,
+                    epoch_step=log_progress,
+                    identifier=f'val_output_1_{self.prediction_metric.name}'
+                ))
+
+            if 'callbacks' in variant_kwargs[student_variant].keys():
+                callbacks += variant_kwargs[student_variant]['callbacks']
+
             model.compile(
                 loss=loss,
                 loss_weights=loss_weights,
@@ -282,30 +150,26 @@ class StudentTeacherExplanationAnalysis:
                              f'optimizer={self.optimizer.__class__.__name__} '
                              f'dataset_size={len(dataset)}) ')
 
-            # ~ Assembling the callbacks
-            callbacks = []
-
-            if log_progress is not None:
-                callbacks.append(LogProgressCallback(
-                    logger=self.logger,
-                    epoch_step=log_progress,
-                    identifier=f'val_output_1_{self.prediction_metric.name}'
-                ))
-
-            if 'callbacks' in variant_kwargs[student_variant].keys():
-                callbacks += variant_kwargs[student_variant]['callbacks']
+            if 'fit_manager' in variant_kwargs[student_variant].keys():
+                fit_manager = variant_kwargs[student_variant]['fit_manager']
+            else:
+                fit_manager = FitManager()
 
             start_time = time.process_time()
-            hist: ks.callbacks.History = model.fit(
-                xtrain,
-                ytrain,
-                epochs=self.epochs,
-                batch_size=batch_size,
-                validation_freq=1,
-                validation_data=(xtest, ytest),
-                callbacks=callbacks,
-                verbose=verbose
+            fit_process = fit_manager(
+                model=model,
+                fit_kwargs={
+                    'x': xtrain,
+                    'y': ytrain,
+                    'epochs': self.epochs,
+                    'batch_size': batch_size,
+                    'validation_freq': 1,
+                    'validation_data': (xtest, ytest),
+                    'callbacks': callbacks,
+                    'verbose': verbose
+                }
             )
+            hist: ks.callbacks.History = fit_process()
             stop_time = time.process_time()
 
             self.results[student_variant] = {
@@ -362,7 +226,6 @@ class StudentTeacherExplanationAnalysis:
             results[variant]['test_errors'] = errors
 
         r = {}
-        print(itertools.combinations(student_variants, 2))
         for variant1, variant2 in itertools.combinations(student_variants, 2):
             errors1 = results[variant1]['test_errors']
             errors2 = results[variant2]['test_errors']
@@ -443,7 +306,7 @@ class StudentTeacherExplanationAnalysis:
                      metric: str = 'node_importance',
                      version: str = 'test',
                      student_variants: List[str] = ['exp', 'ref'],
-                     student_variant_alpha_map: Dict[str, int] = {'exp': 1.0, 'ref': 0.4},
+                     student_variant_alpha_map: Dict[str, float] = {'exp': 1.0, 'ref': 0.4},
                      student_variant_line_style_map: Dict[str, str] = {'exp': '-', 'ref': '-'},
                      student_variant_color_map: Optional[Dict[str, Any]] = None) -> plt.Axes:
         random.seed(self.random_state)

@@ -107,6 +107,13 @@ class Experiment:
             file.write('\n\n')
             traceback.print_tb(exception_traceback, file=file)
 
+    def copy_code_file(self, file_path: str):
+        code_file_name = os.path.basename(file_path)
+        code_file_path = os.path.join(self.path, code_file_name)
+        with open(file_path, mode='r') as file_read, open(code_file_path, mode='w') as file_write:
+            content = file_read.read()
+            file_write.write(content)
+
     @property
     def has_started(self) -> bool:
         return self.start_time is not None

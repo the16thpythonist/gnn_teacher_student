@@ -35,6 +35,7 @@ BASE_PATH = os.getenv('EXPERIMENT_BASE_PATH', os.path.join(PATH, 'results'))
 
 LENGTH = 2000
 SAMPLE_RATIOS = [1.0, 0.7, 0.4, 0.1, 0.02]
+#SAMPLE_RATIOS = [1.0]
 REPETITIONS = 1
 EPOCHS = 10000
 DEVICE = '/cpu:0'
@@ -67,7 +68,6 @@ The expectation is that for smaller dataset sizes the learning effect from the e
 
 with Experiment(base_path=BASE_PATH, name=NAME, description=DESCRIPTION, override=True) as e:
     e.logger.addHandler(logging.StreamHandler(stream=sys.stdout))
-    e.copy_code_file(pathlib.Path(__file__).absolute())
     e.total_work = REPETITIONS * len(SAMPLE_RATIOS)
 
     # ~ Creating the base dataset
@@ -126,8 +126,7 @@ with Experiment(base_path=BASE_PATH, name=NAME, description=DESCRIPTION, overrid
                     ExplanationLoss()
                 ],
                 epochs=int(0.25 * EPOCHS),
-                post_weights=[1, 0.2, 0.2],
-                lock_explanation=False
+                lock_explanation=True
             )
 
             with tf.device(DEVICE):

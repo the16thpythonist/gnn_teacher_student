@@ -1,0 +1,72 @@
+
+MOTIVATION
+==========
+When doing a student teacher analysis, the results very much depend on a number of things. One factor
+definitely is the quality of the explanations, and that is exactly what we want to find out with the
+procedure. Unfortunately, the results also depend on other things as well. For example the results which can
+be achieved depend on an equilibrium between the difficulty of the problem and the complexity / ability of
+the used student architecture. The main problem is that if the student is too powerful for the problem, it
+will learn most of the things on it's own, without needing the explanations. In such a case both student
+variants will likely converge to a very good result and there will be no significant difference, meaning
+we cannot make an assessment of explanation quality.
+
+Now the hypothesis is: If the previously mentioned case can be observed, there should be an increasing
+difference between the student variants when the problem is incrementally made harder.
+One method of making the problem harder is by decreasing the dataset size.
+
+DESCRIPTION
+===========
+This experiment will create one base dataset and then incrementally use smaller subsets of this base
+dataset to perform a repeated student teacher analysis with the goal of plotting the final average
+difference of the validation metric over the different dataset sizes (=problem difficulty).
+The expectation is that for smaller dataset sizes the learning effect from the explanations.
+
+COLORS DATASET
+==============
+The "COLORS" dataset is created by randomly generating graphs of different sizes. Each node has three float
+features (R, G, B) corresponding to RGB color values. The graphs are undirected and all edge weights are 1.
+
+COLOR PAIRS TASK
+================
+"COUNT COLOR PAIRS" is a possible task which is defined on the "COLORS" dataset. it is possible to define
+two colors and the task to be performed will be to predict an integer value for the number of nodes of the
+first color inside the graph, which are connected to at least one node of the second color.
+
+
+RESULTS
+=======
+
+For this experiment I was only running a couple of different dataset sizes and only one repetition. This is
+because I wanted to run a lot of epochs (10k), which takes a very long time: 5 hrs for this experiment alone.
+Also this is pretty much the first instance where I tested out the modified version of the "explanation
+pre-training" strategy for the explanation student for the 25% first epochs only the explanation is being
+trained and then the explanation parameters are actually being frozen so that they cannot be trained anymore.
+Additionally, in this experiment I also used an explanation student which was not very powerful in general
+the attention subnetworks only had single unit dense embeddings and the prediction network was a dense
+embedding layer with 2 units.
+
+Explanation Student actually not performing that well
+-----------------------------------------------------
+The first result I am seeing is that the explanation student is actually not performing terribly well. It
+seems to get stuck in local optimas despite the pre-trained explanation and especially for the larger
+datasets the reference student actually performs better. I feel like this may be due to the parameter
+freezing. Because without the freezing there were cases where after the explanation pre training the
+explanation student actually learned better explanations as well. The pre-training in those cases acted more
+like a push into the right direction.
+The freezing was originally motivated by cases where the explanation student actually completely changed
+the way explanations were being generated after the explanation pre-training was over. In those cases the
+explanation error would suddenly jump up again. I thought this could be fixed by freezing the explanations.
+Now my hypothesis, why this is not actually the case: I feel like even for this simply task, the network
+still kind of needs attention layers to solve the problem and by freezing the layers we are robbing it of
+a bunch of potential problem solving ability so to say?
+
+Now how could I change this?
+- One thing I could do is to make the prediction network more powerful so that it could easily solve the
+  problem even if the attention weights are frozen.
+- Another option would be not to freeze the attention weights but instead continue training the explanation
+  even after the pre-training although possibly with a smaller weight.
+
+Overfitting for small datasets
+------------------------------
+With especially small datasets I occasionally see massive overfitting. Even the explanation student is prone
+to overfitting, even though it seems like the explanation pre-training helps to regularize this a lot.
