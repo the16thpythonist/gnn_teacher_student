@@ -1,0 +1,64 @@
+
+MOTIVATION
+==========
+When doing a student teacher analysis, the results very much depend on a number of things. One factor
+definitely is the quality of the explanations, and that is exactly what we want to find out with the
+procedure. Unfortunately, the results also depend on other things as well. For example the results which can
+be achieved depend on an equilibrium between the difficulty of the problem and the complexity / ability of
+the used student architecture. The main problem is that if the student is too powerful for the problem, it
+will learn most of the things on it's own, without needing the explanations. In such a case both student
+variants will likely converge to a very good result and there will be no significant difference, meaning
+we cannot make an assessment of explanation quality.
+
+Now the hypothesis is: If the previously mentioned case can be observed, there should be an increasing
+difference between the student variants when the problem is incrementally made harder.
+One method of making the problem harder is by decreasing the dataset size.
+
+DESCRIPTION
+===========
+This experiment will create one base dataset and then incrementally use smaller subsets of this base
+dataset to perform a repeated student teacher analysis with the goal of plotting the final average
+difference of the validation metric over the different dataset sizes (=problem difficulty).
+The expectation is that for smaller dataset sizes the learning effect from the explanations.
+
+COLORS DATASET
+==============
+The "COLORS" dataset is created by randomly generating graphs of different sizes. Each node has three float
+features (R, G, B) corresponding to RGB color values. The graphs are undirected and all edge weights are 1.
+
+COLOR PAIRS TASK
+================
+"COUNT COLOR PAIRS" is a possible task which is defined on the "COLORS" dataset. it is possible to define
+two colors and the task to be performed will be to predict an integer value for the number of nodes of the
+first color inside the graph, which are connected to at least one node of the second color.
+
+
+RESULTS
+=======
+
+This experiment is a direct follow up to "colors_pairs_dataset_size__1". It runs mostly the same parameters.
+Same dataset sizes, same epochs etc. Only thing I really changed was the way that the explanation
+pre-training strategy works. Now the explanations parameters are not frozen after the pre training period
+and the explanations indeed continue to be trained with a smaller weight attached to them tough. This is
+to verify my hypothesis that the sub-par performance of the explanation sutdent in the first experiment was
+due to the parameter freezing.
+
+Interesting results for pre-training method
+-------------------------------------------
+Immediately the first results "dataset_2000" support my guess. They show a very interesting effect in the
+edge importance error. During the pre-training period, the edge importance validation error seems to
+stagnate and then after the pre-training it gets a lot better suddenly. This implies that there is a
+reverse kind of synergy here. Just training with the GT explanations was not enough to *really* learn them
+only after being exposed to the original problem to be solved, the local optima also in regards to the
+explanation quality could be overcome! This means that when freezing the explanation training after the
+pre-training period, this effectively means caging the explanation networks in a bad optimum which ends up
+hindering the overall network more than profiting it.
+
+First indication that explanations specifically help with small datasets
+------------------------------------------------------------------------
+With the final results of this experiment I see a hint of the results I was expecting: The performance
+advantage of the explanation student mainly goes up for the smaller datasets, in some cases quite
+drastically so. Closer inspection of the indifidual results reveals that for the smaller datasets the
+reference student tends to overfit a lot while the learned explanations seem to act as a regularization that
+keep the network from over fitting.
+

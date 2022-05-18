@@ -1,3 +1,4 @@
+"""COPY OF ORIGINAL CODE FROM 2022-04-14 19:11:38.502166"""
 import os
 import sys
 import pathlib
@@ -37,15 +38,13 @@ plt.rcParams.update({
     'legend.fontsize': 16,
 })
 
-PATH = os.path.dirname(pathlib.Path(__file__).parent.absolute())
+PATH = pathlib.Path(__file__).parent.parent.absolute()
 BASE_PATH = os.getenv('EXPERIMENT_BASE_PATH', os.path.join(PATH, 'results'))
 
-LENGTH = 5000
-SAMPLE_RATIOS = [1.0, 0.2, 0.1, 0.02, 0.01]
-#SAMPLE_RATIOS = [1.0, 0.05]
-REPETITIONS = 15
-EPOCHS = 10000
-LEARNING_RATE = 0.01
+LENGTH = 2000
+SAMPLE_RATIOS = [1.0, 0.7, 0.4, 0.1, 0.02]
+REPETITIONS = 5
+EPOCHS = 5000
 BATCH_SIZE = 128
 DEVICE = '/cpu:0'
 
@@ -71,7 +70,7 @@ DESCRIPTION
 This experiment will create one base dataset and then incrementally use smaller subsets of this base
 dataset to perform a repeated student teacher analysis with the goal of plotting the final average
 difference of the validation metric over the different dataset sizes (=problem difficulty).
-The expectation is that for smaller dataset sizes the learning effect from the explanations is bigger.
+The expectation is that for smaller dataset sizes the learning effect from the explanations.
 """ + COLORS_DESCRIPTION + COLOR_PAIRS_DESCRIPTION
 
 
@@ -123,7 +122,7 @@ with Experiment(base_path=BASE_PATH, name=NAME, description=DESCRIPTION, overrid
                 student_template=student_template,
                 epochs=EPOCHS,
                 batch_size=BATCH_SIZE,
-                optimizer=ks.optimizers.Adam(learning_rate=LEARNING_RATE),
+                optimizer=ks.optimizers.Adam(learning_rate=0.001),
                 prediction_metric=ks.metrics.MeanSquaredError(),
                 explanation_metric=ks.metrics.MeanAbsoluteError()
             )

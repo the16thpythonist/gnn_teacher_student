@@ -2,15 +2,20 @@
 import sys
 import click
 
+from gnn_teacher_student.version import __version__ as version
 
-@click.command()
-def main(args=None):
-    """Console script for gnn_teacher_student."""
-    click.echo("Replace this message by putting your code into "
-               "gnn_teacher_student.cli.main")
-    click.echo("See click documentation at https://click.palletsprojects.com/")
-    return 0
 
+@click.group('gnnst')
+def cli():
+    pass
+
+
+@click.command('version', help='')
+def version():
+    click.secho(version)
+
+
+cli.add_command(version)
 
 if __name__ == "__main__":
-    sys.exit(main())  # pragma: no cover
+    sys.exit(cli)  # pragma: no cover

@@ -1,0 +1,114 @@
+2022-04-14 19:11:38,501 - INFO - START Experiment "color_pairs_dataset_size" at 2022-04-14 19:11:38.501492
+2022-04-14 19:11:38,501 - INFO - Created Experiment Description: "/home/jonas/Data/Nextcloud/Electronicheart/PDF/gnn_teacher_student/results/color_pairs_dataset_size/EXPERIMENT_DESCRIPTION"
+2022-04-14 19:11:43,620 - INFO - DATASET SIZE: 2000
+2022-04-14 19:11:43,620 - INFO -    Repetition (1/5)
+2022-04-14 19:44:35,456 - DEBUG - work finished (1/25)
+2022-04-14 19:44:35,456 - DEBUG - estimated remaining time: 13.2 hours
+2022-04-14 19:44:35,456 - DEBUG - Memory usage: 1.7 GB
+2022-04-14 19:44:35,457 - INFO -    Repetition (2/5)
+2022-04-14 20:17:43,532 - DEBUG - work finished (2/25)
+2022-04-14 20:17:43,532 - DEBUG - estimated remaining time: 12.7 hours
+2022-04-14 20:17:43,532 - DEBUG - Memory usage: 2.1 GB
+2022-04-14 20:17:43,532 - INFO -    Repetition (3/5)
+2022-04-14 20:50:46,338 - DEBUG - work finished (3/25)
+2022-04-14 20:50:46,338 - DEBUG - estimated remaining time: 12.1 hours
+2022-04-14 20:50:46,338 - DEBUG - Memory usage: 2.5 GB
+2022-04-14 20:50:46,339 - INFO -    Repetition (4/5)
+2022-04-14 21:24:09,185 - DEBUG - work finished (4/25)
+2022-04-14 21:24:09,185 - DEBUG - estimated remaining time: 11.6 hours
+2022-04-14 21:24:09,185 - DEBUG - Memory usage: 2.9 GB
+2022-04-14 21:24:09,185 - INFO -    Repetition (5/5)
+2022-04-14 21:57:41,450 - DEBUG - work finished (5/25)
+2022-04-14 21:57:41,450 - DEBUG - estimated remaining time: 11.1 hours
+2022-04-14 21:57:41,451 - DEBUG - Memory usage: 3.3 GB
+2022-04-14 21:57:46,570 - INFO - DATASET SIZE: 1400
+2022-04-14 21:57:46,571 - INFO -    Repetition (1/5)
+2022-04-14 22:22:05,889 - DEBUG - work finished (6/25)
+2022-04-14 22:22:05,891 - DEBUG - estimated remaining time: 10.1 hours
+2022-04-14 22:22:05,891 - DEBUG - Memory usage: 3.6 GB
+2022-04-14 22:22:05,891 - INFO -    Repetition (2/5)
+2022-04-14 22:46:31,294 - DEBUG - work finished (7/25)
+2022-04-14 22:46:31,294 - DEBUG - estimated remaining time: 9.2 hours
+2022-04-14 22:46:31,294 - DEBUG - Memory usage: 3.6 GB
+2022-04-14 22:46:31,294 - INFO -    Repetition (3/5)
+2022-04-14 23:10:52,387 - DEBUG - work finished (8/25)
+2022-04-14 23:10:52,387 - DEBUG - estimated remaining time: 8.5 hours
+2022-04-14 23:10:52,387 - DEBUG - Memory usage: 3.6 GB
+2022-04-14 23:10:52,387 - INFO -    Repetition (4/5)
+2022-04-14 23:35:14,990 - DEBUG - work finished (9/25)
+2022-04-14 23:35:14,991 - DEBUG - estimated remaining time: 7.8 hours
+2022-04-14 23:35:14,991 - DEBUG - Memory usage: 3.6 GB
+2022-04-14 23:35:14,991 - INFO -    Repetition (5/5)
+2022-04-14 23:59:36,002 - DEBUG - work finished (10/25)
+2022-04-14 23:59:36,003 - DEBUG - estimated remaining time: 7.2 hours
+2022-04-14 23:59:36,003 - DEBUG - Memory usage: 3.7 GB
+2022-04-14 23:59:38,529 - INFO - DATASET SIZE: 800
+2022-04-14 23:59:38,530 - INFO -    Repetition (1/5)
+2022-04-15 00:14:34,537 - DEBUG - work finished (11/25)
+2022-04-15 00:14:34,538 - DEBUG - estimated remaining time: 6.4 hours
+2022-04-15 00:14:34,538 - DEBUG - Memory usage: 4.0 GB
+2022-04-15 00:14:34,538 - INFO -    Repetition (2/5)
+2022-04-15 00:29:54,340 - DEBUG - work finished (12/25)
+2022-04-15 00:29:54,341 - DEBUG - estimated remaining time: 5.7 hours
+2022-04-15 00:29:54,341 - DEBUG - Memory usage: 3.9 GB
+2022-04-15 00:29:54,341 - INFO -    Repetition (3/5)
+2022-04-15 00:44:55,035 - DEBUG - work finished (13/25)
+2022-04-15 00:44:55,035 - DEBUG - estimated remaining time: 5.1 hours
+2022-04-15 00:44:55,035 - DEBUG - Memory usage: 4.0 GB
+2022-04-15 00:44:55,035 - INFO -    Repetition (4/5)
+2022-04-15 01:00:00,013 - DEBUG - work finished (14/25)
+2022-04-15 01:00:00,013 - DEBUG - estimated remaining time: 4.6 hours
+2022-04-15 01:00:00,013 - DEBUG - Memory usage: 4.0 GB
+2022-04-15 01:00:00,013 - INFO -    Repetition (5/5)
+2022-04-15 01:15:02,431 - DEBUG - work finished (15/25)
+2022-04-15 01:15:02,431 - DEBUG - estimated remaining time: 4.0 hours
+2022-04-15 01:15:02,431 - DEBUG - Memory usage: 4.0 GB
+2022-04-15 01:15:03,642 - INFO - DATASET SIZE: 200
+2022-04-15 01:15:03,642 - INFO -    Repetition (1/5)
+2022-04-15 01:21:02,712 - DEBUG - work finished (16/25)
+2022-04-15 01:21:02,715 - DEBUG - estimated remaining time: 3.5 hours
+2022-04-15 01:21:02,715 - DEBUG - Memory usage: 4.0 GB
+2022-04-15 01:21:02,715 - INFO -    Repetition (2/5)
+2022-04-15 01:26:50,213 - DEBUG - work finished (17/25)
+2022-04-15 01:26:50,214 - DEBUG - estimated remaining time: 2.9 hours
+2022-04-15 01:26:50,214 - DEBUG - Memory usage: 4.0 GB
+2022-04-15 01:26:50,214 - INFO -    Repetition (3/5)
+2022-04-15 01:32:37,754 - DEBUG - work finished (18/25)
+2022-04-15 01:32:37,754 - DEBUG - estimated remaining time: 2.5 hours
+2022-04-15 01:32:37,754 - DEBUG - Memory usage: 4.0 GB
+2022-04-15 01:32:37,754 - INFO -    Repetition (4/5)
+2022-04-15 01:38:23,020 - DEBUG - work finished (19/25)
+2022-04-15 01:38:23,020 - DEBUG - estimated remaining time: 2.0 hours
+2022-04-15 01:38:23,021 - DEBUG - Memory usage: 4.0 GB
+2022-04-15 01:38:23,021 - INFO -    Repetition (5/5)
+2022-04-15 01:44:08,068 - DEBUG - work finished (20/25)
+2022-04-15 01:44:08,068 - DEBUG - estimated remaining time: 1.6 hours
+2022-04-15 01:44:08,068 - DEBUG - Memory usage: 4.0 GB
+2022-04-15 01:44:09,259 - INFO - DATASET SIZE: 40
+2022-04-15 01:44:09,259 - INFO -    Repetition (1/5)
+2022-04-15 01:47:29,777 - DEBUG - work finished (21/25)
+2022-04-15 01:47:29,779 - DEBUG - estimated remaining time: 1.3 hours
+2022-04-15 01:47:29,779 - DEBUG - Memory usage: 4.1 GB
+2022-04-15 01:47:29,779 - INFO -    Repetition (2/5)
+2022-04-15 01:50:45,393 - DEBUG - work finished (22/25)
+2022-04-15 01:50:45,394 - DEBUG - estimated remaining time: 0.9 hours
+2022-04-15 01:50:45,394 - DEBUG - Memory usage: 4.1 GB
+2022-04-15 01:50:45,394 - INFO -    Repetition (3/5)
+2022-04-15 01:53:59,859 - DEBUG - work finished (23/25)
+2022-04-15 01:53:59,859 - DEBUG - estimated remaining time: 0.6 hours
+2022-04-15 01:53:59,859 - DEBUG - Memory usage: 4.1 GB
+2022-04-15 01:53:59,859 - INFO -    Repetition (4/5)
+2022-04-15 01:57:12,236 - DEBUG - work finished (24/25)
+2022-04-15 01:57:12,236 - DEBUG - estimated remaining time: 0.3 hours
+2022-04-15 01:57:12,236 - DEBUG - Memory usage: 4.1 GB
+2022-04-15 01:57:12,236 - INFO -    Repetition (5/5)
+2022-04-15 02:00:22,630 - DEBUG - work finished (25/25)
+2022-04-15 02:00:22,631 - DEBUG - estimated remaining time: 0.0 hours
+2022-04-15 02:00:22,631 - DEBUG - Memory usage: 4.1 GB
+2022-04-15 02:00:26,649 - INFO - sample size 2000: avg=0.517 std=0.517 p=0.12500
+2022-04-15 02:00:26,650 - INFO - sample size 1400: avg=-0.006 std=-0.006 p=0.62500
+2022-04-15 02:00:26,650 - INFO - sample size 800: avg=0.565 std=0.565 p=0.18750
+2022-04-15 02:00:26,650 - INFO - sample size 200: avg=0.745 std=0.745 p=0.31250
+2022-04-15 02:00:26,650 - INFO - sample size 40: avg=-5.302 std=-5.302 p=1.00000
+2022-04-15 02:00:28,619 - INFO - Created Experiment Report: "/home/jonas/Data/Nextcloud/Electronicheart/PDF/gnn_teacher_student/results/color_pairs_dataset_size/EXPERIMENT_REPORT"
+2022-04-15 02:00:28,619 - INFO - END Experiment "color_pairs_dataset_size" at 2022-04-15 02:00:28.619393

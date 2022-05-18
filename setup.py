@@ -3,6 +3,7 @@
 """The setup script."""
 
 from setuptools import setup, find_packages
+from gnn_teacher_student.version import __version__ as version
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -34,7 +35,7 @@ setup(
     description="Implementation for the teacher student analysis to evaluate the quality of graph attention explanations",
     entry_points={
         'console_scripts': [
-            'gnn_teacher_student=gnn_teacher_student.cli:main',
+            'gnnst=gnn_teacher_student.cli:main',
         ],
     },
     install_requires=requirements,
@@ -47,6 +48,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/the16thpythonist/gnn_teacher_student',
-    version='0.1.0',
+    version=version,
     zip_safe=False,
 )

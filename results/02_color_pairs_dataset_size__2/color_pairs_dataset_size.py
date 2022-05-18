@@ -28,31 +28,21 @@ import warnings
 warnings.filterwarnings('ignore')
 warnings.warn = lambda *args, **kwargs: 0
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+#tf.compat.v1.enable_eager_execution()
 
-plt.rcParams.update({
-    'text.usetex': True,
-    'text.latex.preamble': r'\usepackage{amsmath}',
-    'font.size': 18,
-    'font.family': 'sans-serif',
-    'legend.fontsize': 16,
-})
-
-PATH = os.path.dirname(pathlib.Path(__file__).parent.absolute())
+PATH = pathlib.Path(__file__).parent.parent.absolute()
 BASE_PATH = os.getenv('EXPERIMENT_BASE_PATH', os.path.join(PATH, 'results'))
 
-LENGTH = 5000
-SAMPLE_RATIOS = [1.0, 0.2, 0.1, 0.02, 0.01]
-#SAMPLE_RATIOS = [1.0, 0.05]
-REPETITIONS = 15
+LENGTH = 2000
+SAMPLE_RATIOS = [1.0, 0.7, 0.4, 0.1, 0.02]
+REPETITIONS = 1
 EPOCHS = 10000
-LEARNING_RATE = 0.01
-BATCH_SIZE = 128
 DEVICE = '/cpu:0'
 
 NAME = os.path.basename(__file__).replace('.py', '')
 DESCRIPTION = """
 MOTIVATION
-==========
+----------
 When doing a student teacher analysis, the results very much depend on a number of things. One factor
 definitely is the quality of the explanations, and that is exactly what we want to find out with the
 procedure. Unfortunately, the results also depend on other things as well. For example the results which can
@@ -67,11 +57,11 @@ difference between the student variants when the problem is incrementally made h
 One method of making the problem harder is by decreasing the dataset size.
 
 DESCRIPTION
-===========
+-----------
 This experiment will create one base dataset and then incrementally use smaller subsets of this base
 dataset to perform a repeated student teacher analysis with the goal of plotting the final average
 difference of the validation metric over the different dataset sizes (=problem difficulty).
-The expectation is that for smaller dataset sizes the learning effect from the explanations is bigger.
+The expectation is that for smaller dataset sizes the learning effect from the explanations.
 """ + COLORS_DESCRIPTION + COLOR_PAIRS_DESCRIPTION
 
 
@@ -98,7 +88,7 @@ with Experiment(base_path=BASE_PATH, name=NAME, description=DESCRIPTION, overrid
     # ~ Setting up the student template
     student_template = StudentTemplate(
         student_class=SimpleAttentionStudent,
-        student_name='attention-student',
+        student_name='attention_student',
         units=2,
         attention_units=1,
         activation='kgcnn>leaky_relu',
@@ -122,8 +112,8 @@ with Experiment(base_path=BASE_PATH, name=NAME, description=DESCRIPTION, overrid
             student_teacher_analysis = StudentTeacherExplanationAnalysis(
                 student_template=student_template,
                 epochs=EPOCHS,
-                batch_size=BATCH_SIZE,
-                optimizer=ks.optimizers.Adam(learning_rate=LEARNING_RATE),
+                batch_size=32,
+                optimizer=ks.optimizers.Adam(learning_rate=0.001),
                 prediction_metric=ks.metrics.MeanSquaredError(),
                 explanation_metric=ks.metrics.MeanAbsoluteError()
             )
@@ -208,9 +198,7 @@ with Experiment(base_path=BASE_PATH, name=NAME, description=DESCRIPTION, overrid
             ax_edge.set_ylabel('Mean Absolute Error')
 
         fig_path = os.path.join(e.path, f'dataset_size_{sample_size}')
-        fig.savefig(fig_path + '.pdf',
-                    bbox_inches='tight',
-                    pad_inches=0.05)
+        fig.savefig(fig_path + '.pdf')
 
         # Now we want to calculate the difference between the final prediction MSE's for all the
         # training repetitions
@@ -252,15 +240,14 @@ with Experiment(base_path=BASE_PATH, name=NAME, description=DESCRIPTION, overrid
         fill_alpha=0.05,
     )
     ax_sample.set_title('Difference in final Validation MSE')
-    ax_sample.set_ylabel(r'$\text{MSE}_{\text{ref}} - \text{MSE}_{\text{exp}}$')
+    ax_sample.set_ylabel(r'$MSE_{ref} - MSE_{exp}$')
     ax_sample.set_xlabel('Dataset Size')
     ax_sample.set_xticks(xs)
     ax_sample.set_xticklabels(sample_sizes)
 
     fig_sample_path = os.path.join(e.path, 'final_prediction_diff_over_sample_size')
-    fig_sample.savefig(fig_sample_path + '.pdf',
-                       bbox_inches='tight',
-                       pad_inches=0.05)
+    fig_sample.savefig(fig_sample_path + '.pdf')
+    fig_sample.savefig(fig_sample_path + '.png')
 
 
 

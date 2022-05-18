@@ -5,7 +5,7 @@ import logging
 import textwrap
 import datetime
 import traceback
-from typing import Optional
+from typing import Optional, Any, Callable
 
 import psutil
 
@@ -22,18 +22,22 @@ class Experiment:
                  name: str,
                  description: str,
                  override: bool = True,
-                 total_work: Optional[int] = None):
+                 total_work: Optional[int] = None,
+                 glob: dict = {}):
         self.base_path = base_path
         self.name = name
         self.description = description
         self.override = override
         self.total_work = total_work
+        print(glob)
+        self.globals = glob
 
         self.start_time: Optional[float] = None
         self.end_time: Optional[float] = None
         self.logger = logging.Logger(self.name)
         self.process = psutil.Process(os.getpid())
         self.work = []
+        self.experiment_variables = {}
 
         # The "override" flag determines the behavior of the class if an experiment folder at the given
         # position already exists. If the flag is True we will delete the previous folder and create a new
@@ -97,6 +101,9 @@ class Experiment:
             ''
         ]
 
+        for key, value in self.experiment_variables.items():
+            report_string_lines.append(f'{key:<20} = {str(value)}')
+
         with open(self.report_path, mode='w') as file:
             report_string = '\n'.join(report_string_lines)
             file.write(report_string)
@@ -107,11 +114,23 @@ class Experiment:
             file.write('\n\n')
             traceback.print_tb(exception_traceback, file=file)
 
+    def detect_experiment_variables(self):
+        for key, value in self.globals.items():
+            print(key, key.upper())
+            if key.upper() == key:
+                self.experiment_variables[key] = value
+
     def copy_code_file(self, file_path: str):
+        """
+        This function expects the string path to the Python code module which defines the very experiment.
+        This code file will then be copied into the experiment folder as a kind of archive for how this
+        specific experiment was defined and conducted including all the parameterization etc.
+        """
         code_file_name = os.path.basename(file_path)
         code_file_path = os.path.join(self.path, code_file_name)
         with open(file_path, mode='r') as file_read, open(code_file_path, mode='w') as file_write:
             content = file_read.read()
+            content = f'"""COPY OF ORIGINAL CODE FROM {datetime.datetime.now()}"""\n' + content
             file_write.write(content)
 
     @property
@@ -131,6 +150,8 @@ class Experiment:
         self.logger.info(f'START Experiment "{self.name}" at {datetime.datetime.now()}')
         self.create_description_file()
         self.logger.info(f'Created Experiment Description: "{self.description_path}"')
+
+        self.detect_experiment_variables()
 
         return self
 

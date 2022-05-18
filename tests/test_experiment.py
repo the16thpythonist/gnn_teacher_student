@@ -4,6 +4,9 @@ import tempfile
 
 from gnn_teacher_student.experiment import Experiment
 
+HELLO = 'hello'
+WORLD = 'world'
+
 
 class TestExperiment(unittest.TestCase):
 
@@ -81,3 +84,24 @@ class TestExperiment(unittest.TestCase):
                 pass
 
             self.assertFalse(os.path.exists(e.error_path))
+
+    def test_passing_globals_to_constructor_works(self):
+
+        with tempfile.TemporaryDirectory() as base_path:
+
+            with Experiment(base_path, 'test_experiment', '', glob=globals()) as e:
+
+                self.assertTrue(isinstance(e.globals, dict))
+                self.assertNotEqual(0, len(e.globals))
+
+    def test_automatic_detection_of_experiment_variables_works(self):
+
+        with tempfile.TemporaryDirectory() as base_path:
+
+            with Experiment(base_path, 'test_experiment', '', glob=globals()) as e:
+                pass
+
+            self.assertNotEqual(0, e.experiment_variables)
+            # These two variables are defined at the top of this module.
+            self.assertIn('HELLO', e.experiment_variables.keys())
+            self.assertIn('WORLD', e.experiment_variables.keys())

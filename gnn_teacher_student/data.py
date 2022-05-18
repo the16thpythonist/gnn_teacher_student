@@ -12,14 +12,14 @@ import matplotlib.pyplot as plt
 
 COLORS_DESCRIPTION = """
 COLORS DATASET
---------------
+==============
 The "COLORS" dataset is created by randomly generating graphs of different sizes. Each node has three float
 features (R, G, B) corresponding to RGB color values. The graphs are undirected and all edge weights are 1.
 """
 
 COLOR_PAIRS_DESCRIPTION = """
 COLOR PAIRS TASK
-----------------
+================
 "COUNT COLOR PAIRS" is a possible task which is defined on the "COLORS" dataset. it is possible to define
 two colors and the task to be performed will be to predict an integer value for the number of nodes of the
 first color inside the graph, which are connected to at least one node of the second color.
@@ -150,7 +150,7 @@ def generate_color_pairs_dataset(length: int,
                                  color_weights: Optional[List[int]] = None,
                                  color1: Tuple[float, float, float] = (1, 0, 0),
                                  color2: Tuple[float, float, float] = (0, 1, 0),
-                                 exclude_empty: bool = False):
+                                 exclude_empty: bool = False) -> List[dict]:
     color1 = np.array(color1)
     color2 = np.array(color2)
 

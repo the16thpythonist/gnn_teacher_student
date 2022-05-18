@@ -1,0 +1,88 @@
+
+MOTIVATION
+==========
+When doing a student teacher analysis, the results very much depend on a number of things. One factor
+definitely is the quality of the explanations, and that is exactly what we want to find out with the
+procedure. Unfortunately, the results also depend on other things as well. For example the results which can
+be achieved depend on an equilibrium between the difficulty of the problem and the complexity / ability of
+the used student architecture. The main problem is that if the student is too powerful for the problem, it
+will learn most of the things on it's own, without needing the explanations. In such a case both student
+variants will likely converge to a very good result and there will be no significant difference, meaning
+we cannot make an assessment of explanation quality.
+
+Now the hypothesis is: If the previously mentioned case can be observed, there should be an increasing
+difference between the student variants when the problem is incrementally made harder.
+One method of making the problem harder is by decreasing the dataset size.
+
+DESCRIPTION
+===========
+This experiment will create one base dataset and then incrementally use smaller subsets of this base
+dataset to perform a repeated student teacher analysis with the goal of plotting the final average
+difference of the validation metric over the different dataset sizes (=problem difficulty).
+The expectation is that for smaller dataset sizes the learning effect from the explanations.
+
+COLORS DATASET
+==============
+The "COLORS" dataset is created by randomly generating graphs of different sizes. Each node has three float
+features (R, G, B) corresponding to RGB color values. The graphs are undirected and all edge weights are 1.
+
+COLOR PAIRS TASK
+================
+"COUNT COLOR PAIRS" is a possible task which is defined on the "COLORS" dataset. it is possible to define
+two colors and the task to be performed will be to predict an integer value for the number of nodes of the
+first color inside the graph, which are connected to at least one node of the second color.
+
+
+RESULTS
+=======
+With this experiment I mainly wanted to get some sort of statistical measure for the performance benefits.
+With each dataset size the experiment was repeated 5 times. To reduce the time I also cut the epochs from
+10k to 5k for this experiment. Otherwise I used the same explanation pre-training as in the previous
+experiment where after the explanation pre training the weights are not frozen.
+
+It did not work
+---------------
+Looking at the results it kind of looks exactly like the opposite of what I have been expecting. For the
+small dataset sizes there is actually a rather big drop in average performance advantage. Judging from the
+individual results this mainly comes from a single run where the explanations student massively overfit and
+ended up with a very high validation error.
+Aside from this one outlier the general theme of "It did not work" still kind of holds true for the rest
+of the runs as well. Sometimes the explanation student is better, sometimes it is not. In the individual
+results it really does feel like there is no clear trend in the data. - So why is that so?
+I think it mainly is because I dropped the epoch count. On a lot of the individual results I can see that
+the explanations have not even remotely converged at the end of the explanation pre training. Also there
+are a lot of cases where the overall prediction error has not yet converged at the end of the total
+training period. This means in future experiments I will have to do at least 10k epochs.
+
+Maybe varying the dataset size is not the best way to test what I want to test
+------------------------------------------------------------------------------
+I am doing this experiment with the dataset sizes because aside from explanation quality there is also a
+dependency on the abilities of the student model in contrast to the difficulty of the problem. And with
+the variation of the dataset size I want to show that dependency, but I am questioning that this is the
+way to do it. Because reducing dataset size seems kind of counter intuitive for the following reasons:
+- Results of this experiment will overlayered with an additional kind of random noise, which comes from the
+  sampling process. Right now, to simulate how this would be done with a real dataset in the future, the
+  smaller datasets are obtained by randomly sampling from one large base dataset. Especially for small
+  dataset sizes this could easily create very unbalanced datasets. This problem implies that we would need
+  a lot of repetitions to kind of even out this sampling noise effect.
+- In regards to a possibly more formalized method which can be applied to real datasets in the future to
+  assess the explanation quality, there is also a problem: Especially the number of explanations for real
+  datasets can be really small (for example if they have to be obtained by human annotation). In those cases
+  we would really like to make the best use of all the data we have instead of reducing the size even further
+
+Now, the problem which I want to observe here has two layers: Problem complexity and model ability. The
+outcome of the student teacher analysis is determined by the balance of those two factors. I propose that
+it would make more sense to conduct an experiment which runs the analysis for different student
+architectures instead of with different dataset sizes. I would propose the following method: The basic
+idea behind the architecture would be the same, for example the attention mechanism which I am currently
+using, but the specific architecture would be varied. More specifically I would also keep the prediction
+network constant and rather simple (~3 GCN layers) and then only change the capabilities of the attention
+sub networks so that they have increasing number of layers. The first version would only have a single GCN
+layer (1 hop neighborhood) then two etc. This would mean that in that order the different student models
+would be able to learn different kinds of complex explanations: The first student can only learn local
+explanations, the second can learn 2 hop explanations and so on...
+With this procedure one could visualize that there is indeed an additional dependency on the student ability
+but one also gets another kind of information: most likely the performance benefit would peak for a certain
+student and that would grant the information about what kind of explanation is the most effective for this
+data (1hop, 2hop, 3hop) - In essence this procedure would reveal additional information about the nature of
+the task itself.

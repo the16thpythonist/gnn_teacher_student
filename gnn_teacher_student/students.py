@@ -1,5 +1,5 @@
 from copy import deepcopy, copy
-from typing import Tuple, Callable, Optional
+from typing import Tuple, Callable, Optional, List
 from pprint import pprint
 
 import tensorflow as tf
@@ -164,3 +164,46 @@ class SimpleAttentionStudent(AbstractStudent):
 
     def lock_prediction_parameters(self) -> None:
         self.lay_attentive.trainable = False
+
+
+class GeneralAttentionStudent(AbstractStudent):
+
+    def __init__(self,
+                 lay_node_importance_cb: Callable[[], GraphBaseLayer],
+                 lay_edge_importance_cb: Callable[[], GraphBaseLayer],
+                 lay_prediction_cb: Callable[[], GraphBaseLayer],
+                 attentive_units: int = 3,
+                 supports_batching: bool = True,
+                 **kwargs):
+        AbstractStudent.__init__(self, **kwargs)
+        self.supports_batching = supports_batching
+
+        self.lay_node_importances = lay_node_importance_cb()
+        self.lay_edge_importances = lay_edge_importance_cb()
+        self.lay_attentive = AttentiveLayer(
+            units=attentive_units,
+            activation='linear',
+            use_bias=False,
+            pooling_method='sum'
+        )
+
+        self.lay_prediction = lay_prediction_cb()
+
+    def call(self, inputs):
+        node_input, edge_input, edge_index_input = inputs
+
+        node_importances = self.lay_node_importances([node_input, edge_input, edge_index_input])
+        edge_importances = self.lay_edge_importances([node_input, edge_input, edge_index_input])
+
+        x = self.lay_attentive([
+            node_input,
+            node_importances,
+            edge_input,
+            edge_importances,
+            edge_index_input
+        ])
+        x = self.lay_prediction([x, edge_input, edge_index_input])
+
+        node_importances = tf.reduce_mean(node_importances, axis=-1)
+        edge_importances = tf.reduce_mean(edge_importances, axis=-1)
+        return x, node_importances, edge_importances

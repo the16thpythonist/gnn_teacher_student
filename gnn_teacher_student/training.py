@@ -258,3 +258,22 @@ class ExplanationPreTraining(StudentTrainingStrategy):
         return kwargs
 
 
+class ReferenceStudentTraining(StudentTrainingStrategy):
+
+    def __init__(self,
+                 loss: Callable = ks.losses.MeanSquaredError()):
+        StudentTrainingStrategy.__init__(self)
+        self.loss = loss
+
+    def create_kwargs(self):
+        kwargs = {
+            'loss': [
+                self.loss,
+                NoLoss(),
+                NoLoss()
+            ],
+            'loss_weights': [1, 0, 0],
+            'callbacks': []
+        }
+        return kwargs
+

@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import pathlib
 import random
 import itertools
@@ -40,60 +41,67 @@ plt.rcParams.update({
 PATH = os.path.dirname(pathlib.Path(__file__).parent.absolute())
 BASE_PATH = os.getenv('EXPERIMENT_BASE_PATH', os.path.join(PATH, 'results'))
 
-LENGTH = 5000
-SAMPLE_RATIOS = [1.0, 0.2, 0.1, 0.02, 0.01]
-#SAMPLE_RATIOS = [1.0, 0.05]
-REPETITIONS = 15
+LENGTH = 1000
+RANDOMIZE_DATASET = True
+REPETITIONS = 10
 EPOCHS = 10000
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.001
 BATCH_SIZE = 128
+LOSSES = {
+    'Binary Crossentropy': ks.losses.binary_crossentropy,
+    'Mean Absolute Error': ks.losses.mean_absolute_error,
+    'Mean Squared Error': ks.losses.mean_squared_error
+}
 DEVICE = '/cpu:0'
 
 NAME = os.path.basename(__file__).replace('.py', '')
 DESCRIPTION = """
 MOTIVATION
 ==========
-When doing a student teacher analysis, the results very much depend on a number of things. One factor
-definitely is the quality of the explanations, and that is exactly what we want to find out with the
-procedure. Unfortunately, the results also depend on other things as well. For example the results which can
-be achieved depend on an equilibrium between the difficulty of the problem and the complexity / ability of
-the used student architecture. The main problem is that if the student is too powerful for the problem, it
-will learn most of the things on it's own, without needing the explanations. In such a case both student
-variants will likely converge to a very good result and there will be no significant difference, meaning
-we cannot make an assessment of explanation quality.
-
-Now the hypothesis is: If the previously mentioned case can be observed, there should be an increasing
-difference between the student variants when the problem is incrementally made harder.
-One method of making the problem harder is by decreasing the dataset size.
+During preliminary experiments I had observed that the quality of the explanation supervision procedure
+for the explanation-aware student of the student teacher analysis strongly depended on the choice of
+explanation loss function. Although these were mainly heuristic observations. Now it would be interesting
+to have some qualitative evidence which loss function works.
 
 DESCRIPTION
 ===========
-This experiment will create one base dataset and then incrementally use smaller subsets of this base
-dataset to perform a repeated student teacher analysis with the goal of plotting the final average
-difference of the validation metric over the different dataset sizes (=problem difficulty).
-The expectation is that for smaller dataset sizes the learning effect from the explanations is bigger.
+This experiment will use one base dataset configuration of the "COLORS" dataset generation method and the
+"COUNT COLOR PAIRS" task. For different explanation loss functions and otherwise same parameters, a training
+process will be repeated a number of times to get a statistical result for the final validation metric
+difference between the explanation and the reference students.
 """ + COLORS_DESCRIPTION + COLOR_PAIRS_DESCRIPTION
+
+# This data structure will later on contain all the information about the final prediction performance
+# metrics for each of the variations of the experiment variable as well as all the individual repetitions
+# (on the level below)
+# Specifically, the keys of this dict will be the (string) identifiers for the experiment parameters and
+# the values will be dicts again, where the string keys of those dicts will be "exp" and "ref" and the
+# corresponding values will be lists contain the final validation error metrics for that student.
+final_prediction_metrics_map: Dict[str, Dict[str, List[float]]] = {}
+
+results_map: Dict[str, List[dict]] = {}
 
 
 with Experiment(base_path=BASE_PATH, name=NAME, description=DESCRIPTION, override=True) as e:
     e.logger.addHandler(logging.StreamHandler(stream=sys.stdout))
     e.copy_code_file(pathlib.Path(__file__).absolute())
-    e.total_work = REPETITIONS * len(SAMPLE_RATIOS)
+    e.total_work = REPETITIONS * len(LOSSES)
 
-    # ~ Creating the base dataset
-    base_dataset = generate_color_pairs_dataset(
-        length=LENGTH,
-        node_count_cb=lambda: random.randint(5, 50),
-        additional_edge_count_cb=lambda: random.randint(1, 5),
-        colors=[
+    # ~ Creating the dataset
+    dataset_kwargs = {
+        'length': LENGTH,
+        'node_count_cb': lambda: random.randint(5, 50),
+        'additional_edge_count_cb': lambda: random.randint(1, 5),
+        'colors': [
             (1, 0, 0),  # red
             (0, 1, 0),  # green
             (0, 0, 1),  # blue
             (1, 1, 0),  # yellow
             (0, 1, 1),  # magenta
         ],
-        exclude_empty=True
-    )
+        'exclude_empty': True
+    }
+    dataset = generate_color_pairs_dataset(**dataset_kwargs)
 
     # ~ Setting up the student template
     student_template = StudentTemplate(
@@ -109,14 +117,22 @@ with Experiment(base_path=BASE_PATH, name=NAME, description=DESCRIPTION, overrid
     # differences between the prediction metrics of the two student variants at the end of the training
     sample_final_prediction_metric_diffs: Dict[int, List[float]] = {}
 
-    for sample_ratio in SAMPLE_RATIOS:
-        sample_size = int(LENGTH * sample_ratio)
+    for loss_name, loss_function in LOSSES.items():
 
-        e.log(f'DATASET SIZE: {sample_size}')
+        e.log(f'LOSS FUNCTION: "{loss_name}"')
+
         result_list = []
         for i in range(REPETITIONS):
             e.log(f'   Repetition ({i+1}/{REPETITIONS})')
-            dataset = random.sample(base_dataset, sample_size)
+
+            # This flag controls whether or not the dataset should be re-generated during each repetition.
+            # Setting this flag to True will probably require more repetitions to get a statistically solid
+            # result as the dataset randomization does induce a fair bit of noise, but the obtained results
+            # should be more solid in that there is a lesser chance that they are influenced by a
+            # specifically (un-)favorable dataset.
+            if RANDOMIZE_DATASET:
+                dataset = generate_color_pairs_dataset(**dataset_kwargs)
+
             _dataset = {field: [g[field] for g in dataset] for field in dataset[0].keys()}
 
             student_teacher_analysis = StudentTeacherExplanationAnalysis(
@@ -127,13 +143,15 @@ with Experiment(base_path=BASE_PATH, name=NAME, description=DESCRIPTION, overrid
                 prediction_metric=ks.metrics.MeanSquaredError(),
                 explanation_metric=ks.metrics.MeanAbsoluteError()
             )
+            # We also want to be able to follow the progress of the experiment in real time, which is why
+            # we also print the log messages to the console here.
             student_teacher_analysis.logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 
             explanation_pre_training = ExplanationPreTraining(
                 loss=[
                     ks.losses.MeanSquaredError(),
-                    ExplanationLoss(),
-                    ExplanationLoss()
+                    ExplanationLoss(loss_function=loss_function),
+                    ExplanationLoss(loss_function=loss_function)
                 ],
                 epochs=int(0.25 * EPOCHS),
                 post_weights=[1, 0.2, 0.2],
@@ -207,62 +225,65 @@ with Experiment(base_path=BASE_PATH, name=NAME, description=DESCRIPTION, overrid
             ax_edge.set_xlabel('Epochs')
             ax_edge.set_ylabel('Mean Absolute Error')
 
-        fig_path = os.path.join(e.path, f'dataset_size_{sample_size}')
+        loss_slag = loss_name.lower().replace(' ', '_')
+        fig_path = os.path.join(e.path, f'loss_function_{loss_slag}')
         fig.savefig(fig_path + '.pdf',
                     bbox_inches='tight',
                     pad_inches=0.05)
 
-        # Now we want to calculate the difference between the final prediction MSE's for all the
-        # training repetitions
-        final_prediction_metric_diffs = [result['ref']['test_prediction_metric'][-1] -
-                                         result['exp']['test_prediction_metric'][-1]
-                                         for result in result_list]
+        final_prediction_metrics = {
+            'ref': [result['ref']['test_prediction_metric'][-1] for result in result_list],
+            'exp': [result['exp']['test_prediction_metric'][-1] for result in result_list]
+        }
 
         # With that we can compute an average and a standard deviations
-        sample_final_prediction_metric_diffs[sample_size] = final_prediction_metric_diffs
+        final_prediction_metrics_map[loss_name] = final_prediction_metrics
 
-        del result_list
+        results_map[loss_name] = [{
+            'ref': {
+                'test_prediction_metric': list(result['ref']['test_prediction_metric']),
+                'test_node_importance_metric': list(result['ref']['test_node_importance_metric']),
+                'test_edge_importance_metric': list(result['ref']['test_edge_importance_metric'])
+            },
+            'exp': {
+                'test_prediction_metric': list(result['exp']['test_prediction_metric']),
+                'test_node_importance_metric': list(result['exp']['test_node_importance_metric']),
+                'test_edge_importance_metric': list(result['exp']['test_edge_importance_metric'])
+            }
+        } for result in result_list]
 
-    # Now that we have the statistical results for all the sample sizes, we can process those into a plot
-    sample_sizes = []
-    diff_avgs = []
-    diff_stds = []
-    for sample_size, prediction_diffs in sample_final_prediction_metric_diffs.items():
-        diff_avg = np.mean(prediction_diffs)
-        diff_std = np.mean(prediction_diffs)
-        w, p = scipy.stats.wilcoxon(prediction_diffs)
-        significant = p < 0.05
+    # Now that we have the statistical results for all the different loss functions, we can save this data
+    # and process it further into plots
+    fig_bar, ax_bar = plt.subplots(nrows=1, ncols=1, figsize=(8, 8))
+    xs = []
+    loss_names = []
+    for x, (loss_name, final_prediction_metrics) in enumerate(final_prediction_metrics_map.items()):
+        diffs = [m_ref - m_exp
+                 for m_ref, m_exp in zip(final_prediction_metrics['ref'], final_prediction_metrics['exp'])]
+        avg = np.mean(diffs)
+        std = np.std(diffs)
 
-        e.log(f'sample size {sample_size}: avg={diff_avg:.3f} std={diff_std:.3f} p={p:.5f}')
-        sample_sizes.append(sample_size)
-        diff_avgs.append(diff_avg)
-        diff_stds.append(diff_std)
+        ax_bar.scatter(x, avg)
+        xs.append(x)
+        loss_names.append(loss_name)
 
-    color_sample = 'green'
+    ax_bar.set_title('Final Prediction Metric Difference')
+    ax_bar.set_ylabel(r'$\text{MSE}_{\text{ref}} - \text{MSE}_{\text{exp}}$')
+    ax_bar.set_xticks(xs)
+    ax_bar.set_xticklabels([loss_name.replace(' ', '\n') for loss_name in loss_names])
 
-    fig_sample, ax_sample = plt.subplots(nrows=1, ncols=1, figsize=(8, 8))
-    fig_sample.patch.set_facecolor('white')
+    fig_bar_path = os.path.join(e.path, 'final_prediction_diff_for_losses')
+    fig_bar.savefig(fig_bar_path + '.pdf',
+                    bbox_inches='tight',
+                    pad_inches=0.05)
 
-    xs = list(range(len(sample_sizes)))
-    plot_average_with_uncertainty(
-        ax=ax_sample,
-        xs=xs,
-        yss=[prediction_diffs for prediction_diffs in sample_final_prediction_metric_diffs.values()],
-        color=color_sample,
-        fill_alpha=0.05,
-    )
-    ax_sample.set_title('Difference in final Validation MSE')
-    ax_sample.set_ylabel(r'$\text{MSE}_{\text{ref}} - \text{MSE}_{\text{exp}}$')
-    ax_sample.set_xlabel('Dataset Size')
-    ax_sample.set_xticks(xs)
-    ax_sample.set_xticklabels(sample_sizes)
+    # Saving the raw data
+    results_path = os.path.join(e.path, 'results.json')
+    with open(results_path, mode='w') as file:
+        content = json.dumps(results_map, indent=4)
+        file.write(content)
 
-    fig_sample_path = os.path.join(e.path, 'final_prediction_diff_over_sample_size')
-    fig_sample.savefig(fig_sample_path + '.pdf',
-                       bbox_inches='tight',
-                       pad_inches=0.05)
-
-
-
-
-
+    final_metrics_path = os.path.join(e.path, 'final_prediction_metrics.json')
+    with open(final_metrics_path, mode='w') as file:
+        content = json.dumps(final_prediction_metrics_map, indent=4)
+        file.write(content)
